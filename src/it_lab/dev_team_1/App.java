@@ -16,10 +16,10 @@ public class App {
     private static final String MEMBER_FILE_PATH = "./members.txt";
 
     public static void main(String[] args) throws Exception {
-        int numberOfTeam = 4;
+        int memberSizePerTeam = 4;
         List<Member> members = initMemberList();
 
-        MeetService meetService = new MeetService(members,numberOfTeam);
+        MeetService meetService = new MeetService(members,memberSizePerTeam);
         List<Team> teams = meetService.matchingTeam();
 
         print(teams);

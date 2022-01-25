@@ -20,11 +20,11 @@ public class MeetService {
     private final Random random = new Random();
     private List<Member> membersCopy;
 
-    public MeetService(List<Member> members,int numberOfTeam) throws IOException {
+    public MeetService(List<Member> members,int memberSizePerTeam) throws IOException {
         this.members = members;
         this.numberOfMember = members.size();
-        this.numberOfTeam = numberOfTeam;
-        this.memberSizePerTeam = numberOfMember / numberOfTeam;
+        this.memberSizePerTeam = memberSizePerTeam;
+        this.numberOfTeam = Math.round( numberOfMember / (float) memberSizePerTeam );
         map = new int[numberOfMember][numberOfMember];
         setMapFromTextFile();
     }
