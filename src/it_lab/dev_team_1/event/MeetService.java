@@ -14,6 +14,7 @@ public class MeetService {
     private final int numberOfMember;
     private final int numberOfTeam;
     private final int memberSizePerTeam;
+    private final boolean isRemainMember;
 
     private final int[][] map;
 
@@ -25,25 +26,31 @@ public class MeetService {
         this.numberOfMember = members.size();
         this.memberSizePerTeam = memberSizePerTeam;
         this.numberOfTeam = Math.round( numberOfMember / (float) memberSizePerTeam );
+        this.isRemainMember = numberOfMember % memberSizePerTeam != 0;
         map = new int[numberOfMember][numberOfMember];
         setMapFromTextFile();
     }
 
     public List<Team> matchingTeam() throws  IOException {
-        random.setSeed(System.currentTimeMillis());
-        membersCopy = deepCopy(members);
+        this.random.setSeed(System.currentTimeMillis());
+        this.membersCopy = deepCopy(this.members);
 
         selectTeamLeader();
 
-        for(Team team : teams){
+        for(Team team : this.teams){
             selectTeamMember(team);
 
             //팀원들끼리 서로 만남 표시
             for(Member memberA : team.getMemberList()){
                 for(Member memberB : team.getMemberList()){
-                    map[memberA.getId()][memberB.getId()]++;
+                    this.map[memberA.getId()][memberB.getId()]++;
                 }
             }
+        }
+
+        //딱 나누어 떨어지지 않고 팀원이 남았다면
+        if(!this.membersCopy.isEmpty()) {
+            randomRemainMemberMatching();
         }
 
         writeMapInTextFile();
@@ -51,12 +58,24 @@ public class MeetService {
         return teams;
     }
 
+    private void randomRemainMemberMatching() {
+        for(int i=0; i < this.membersCopy.size(); i++) {
+            teams.get(i).addMember(this.membersCopy.get(i));
+            //팀원들끼리 서로 만남 표시
+            for(Member memberA : teams.get(i).getMemberList()){
+                this.map[memberA.getId()][this.membersCopy.get(i).getId()]++;
+                if(memberA.equals(this.membersCopy.get(i))) continue;
+                this.map[this.membersCopy.get(i).getId()][memberA.getId()]++;
+            }
+        }
+    }
+
     /**
      * Team(Leader만 존재하는 team) 에 팀원들 매칭
      * */
     private void selectTeamMember(Team team){
         Member leader = team.getLeader();
-        int vacancy = memberSizePerTeam - 1; //남은 팀원 자리 수
+        int vacancy = this.memberSizePerTeam - 1; //남은 팀원 자리 수
 
         while(team.getTeamSize() < 4){
             List<Member> minMeetMembers = findMinMeetMembers(leader);
@@ -69,14 +88,14 @@ public class MeetService {
             }
 
             team.addMembers(minMeetMembers);
-            membersCopy.removeAll(minMeetMembers);
+            this.membersCopy.removeAll(minMeetMembers);
         }
     }
 
     private void selectTeamLeader(){
         Map<Member,Double> standardDeviationOfMember = new HashMap<>();
 
-        for(Member member : members){
+        for(Member member : this.members){
             List<Double> deviation = getDeviation(member);
             double dispersion = getDispersion(deviation);
             standardDeviationOfMember.put(member,Math.sqrt(dispersion));    //표준편차
@@ -87,14 +106,14 @@ public class MeetService {
         List<Map.Entry<Member, Double>> sortedMemberByStandardDeviation = new ArrayList<>(standardDeviationOfMember.entrySet());
         sortedMemberByStandardDeviation.sort((entry1,entry2) -> {
             if(entry1 == entry2) {
-                return random.nextInt(2) == 1 ? 1 : 0;      //표준편차가 같으면 랜덤
+                return this.random.nextInt(2) == 1 ? 1 : 0;      //표준편차가 같으면 랜덤
             }
             else return entry2.getValue().compareTo(entry1.getValue());
         });
 
-        List<Member> leaders = new ArrayList<>(sortedMemberByStandardDeviation.stream().map(Map.Entry::getKey).toList().subList(0,numberOfTeam));
-        teams.addAll(makeTeams(leaders));
-        membersCopy.removeAll(leaders);
+        List<Member> leaders = new ArrayList<>(sortedMemberByStandardDeviation.stream().map(Map.Entry::getKey).toList().subList(0,this.numberOfTeam));
+        this.teams.addAll(makeTeams(leaders));
+        this.membersCopy.removeAll(leaders);
     }
 
     private List<Team> makeTeams(List<Member> leaders){
@@ -110,7 +129,7 @@ public class MeetService {
             sum += Math.pow(number,2);
         }
 
-        return sum / numberOfMember;
+        return sum / this.numberOfMember;
     }
 
     /**
@@ -118,11 +137,11 @@ public class MeetService {
     * */
     private List<Double> getDeviation(Member member){
         int memberId = member.getId();
-        double avarage = Arrays.stream(map[memberId]).average().orElse(0);
+        double avarage = Arrays.stream(this.map[memberId]).average().orElse(0);
 
         List<Double> deviation = new ArrayList<>();
-        for(int i=0; i < numberOfMember; i++){
-            deviation.add(avarage - map[memberId][i]);
+        for(int i=0; i < this.numberOfMember; i++){
+            deviation.add(avarage - this.map[memberId][i]);
         }
 
         return deviation;
@@ -138,16 +157,16 @@ public class MeetService {
         int tmp;
         List<Member> result = new ArrayList<>();
 
-        for(int i=0; i < map.length; i++){
-            if(targetMember.getId() == i || !membersCopy.contains(members.get(i))) continue;
+        for(int i=0; i < this.map.length; i++){
+            if(targetMember.getId() == i || !this.membersCopy.contains(this.members.get(i))) continue;
 
-            tmp = map[targetMember.getId()][i];
+            tmp = this.map[targetMember.getId()][i];
             if(min > tmp){
                 min = tmp;
                 result.clear();
-                result.add(members.get(i));
+                result.add(this.members.get(i));
             }else if(min == tmp){
-                result.add(members.get(i));
+                result.add(this.members.get(i));
             }
         }
 
@@ -172,7 +191,7 @@ public class MeetService {
             while ((line = reader.readLine()) != null) {
                 String[] val = line.split(" ");
                 for (int j = 0; j < this.numberOfMember; j++) {
-                    map[i][j] = Integer.parseInt(val[j]);
+                    this.map[i][j] = Integer.parseInt(val[j]);
                 }
                 i++;
             }
@@ -186,7 +205,7 @@ public class MeetService {
      * */
     private void writeMapInTextFile() throws IOException {
         try(BufferedWriter writer = new BufferedWriter(new FileWriter(MAP_FILE_PATH, false))){
-            for (int[] list : map) {
+            for (int[] list : this.map) {
                 for (int i = 0; i < list.length; i++) {
                     writer.write(String.valueOf(list[i]));
                     if (i != list.length - 1) {

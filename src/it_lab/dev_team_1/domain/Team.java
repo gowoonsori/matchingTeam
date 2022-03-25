@@ -19,6 +19,10 @@ public class Team {
         memberList.addAll(members);
     }
 
+    public void addMember(Member member) {
+        memberList.add(member);
+    }
+
     public Member getLeader() {
         return leader;
     }
