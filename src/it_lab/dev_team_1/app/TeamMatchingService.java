@@ -44,7 +44,7 @@ public class TeamMatchingService {
 
         //팀원 매칭
         for(Team team : this.teams){
-            team.selectMemberBy(this.members);
+            team.selectMemberIn(this.members);
         }
 
         //딱 나누어 떨어지지 않고 팀원이 남았다면 남은 팀으로 묶기
