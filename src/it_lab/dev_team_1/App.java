@@ -2,7 +2,7 @@ package it_lab.dev_team_1;
 
 import it_lab.dev_team_1.domain.Member;
 import it_lab.dev_team_1.domain.Team;
-import it_lab.dev_team_1.event.MeetService;
+import it_lab.dev_team_1.app.TeamMatchingService;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -19,10 +19,8 @@ public class App {
         int memberSizePerTeam = 4;
         List<Member> members = initMemberList();
 
-        MeetService meetService = new MeetService(members,memberSizePerTeam);
-        List<Team> teams = meetService.matchingTeam();
-
-        print(teams);
+        TeamMatchingService teamMatchingService = new TeamMatchingService(members,memberSizePerTeam);
+        printTeamMembers(teamMatchingService.matchingTeam());
     }
 
     private static List<Member> initMemberList() throws FileNotFoundException {
@@ -32,8 +30,7 @@ public class App {
             String line;
             int i = 0;
             while ((line = reader.readLine()) != null) {
-                members.add(new Member(i,line.trim()));
-                i++;
+                members.add(new Member(i++,line.trim()));
             }
         } catch (IOException e) {
             throw new FileNotFoundException("members.txt 파일이 존재하지 않습니다.");
@@ -42,7 +39,7 @@ public class App {
         return members;
     }
 
-    public static void print(List<Team> teams) {
+    public static void printTeamMembers(List<Team> teams) {
         int i = 1;
         for (Team team : teams) {
             System.out.print(i + "팀 : ");
